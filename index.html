@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vibration Toggle</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      margin:0;
+      background:#f6f7fb;
+    }
+    .card {
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.08);
+      text-align:center;
+      width:320px;
+    }
+    button {
+      font-size:18px;
+      padding:12px 18px;
+      border-radius:8px;
+      border: none;
+      cursor:pointer;
+    }
+    .status {
+      margin-top:12px;
+      color:#444;
+      font-size:14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Vibration testen</h2>
+    <button id="toggleBtn">Vibrieren starten</button>
+    <div class="status" id="status">Status: Aus</div>
+    <div style="margin-top:10px; font-size:12px; color:#666;">
+      Hinweis: Manche Browser/iPhones blockieren die Vibrations-API.
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('toggleBtn');
+    const status = document.getElementById('status');
+
+    let vibrating = false;
+    let intervalId = null;
+
+    function supportsVibration() {
+      return 'vibrate' in navigator;
+    }
+
+    function updateUI() {
+      if (vibrating) {
+        btn.textContent = 'Vibrieren stoppen';
+        status.textContent = 'Status: Vibriert';
+      } else {
+        btn.textContent = 'Vibrieren starten';
+        status.textContent = 'Status: Aus';
+      }
+    }
+
+    function startVibration() {
+      if (!supportsVibration()) {
+        alert('Dein Browser unterstützt die Vibration-API nicht.');
+        return;
+      }
+
+      // Einmalige kurze Vibration sofort (erfüllt oft die "user gesture")
+      navigator.vibrate(200);
+
+      // Wiederholtes Vibrations-Pattern simulieren:
+      // Manche Browser begrenzen die Dauer einer einzelnen Vibrations-Anfrage,
+      // deshalb senden wir wiederholt kurze Impulse über setInterval.
+      intervalId = setInterval(() => {
+        // 200 ms Vibration
+        navigator.vibrate(200);
+      }, 500); // alle 500 ms erneut -> ca. 200ms an, 300ms aus
+
+      vibrating = true;
+      updateUI();
+    }
+
+    function stopVibration() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      // Stoppen aller Vibrationen
+      navigator.vibrate(0);
+      vibrating = false;
+      updateUI();
+    }
+
+    btn.addEventListener('click', () => {
+      // Sicherheit: manche Browser erlauben Vibration nur nach direkter Nutzeraktion.
+      if (!supportsVibration()) {
+        alert('Vibration wird von deinem Browser nicht unterstützt (z. B. iOS Safari).');
+        return;
+      }
+
+      if (!vibrating) startVibration();
+      else stopVibration();
+    });
+
+    // Wenn die Seite im Hintergrund ist, stoppen wir die Vibration automatisch
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && vibrating) stopVibration();
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>
